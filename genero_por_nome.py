@@ -2,54 +2,51 @@ import pandas as pd
 from unicodedata import normalize
 
 
+class JsonDeNome:
+
+    def __init__(self, path:str):
+        self.path = str(path)
+        
+    def geraJson(self) -> dict:
+        """
+        Carrega dataset e os nomes e os mais prováveis sexos dos usuários.
+        """
+        data = pd.read_csv(self.path)[['first_name', 'classification']]
+        return {i[1]: i[2] for i in data.itertuples()}
+
+
+
 class GeneroPorNome:
-    
-    """ 
-    Retorno  provável sexo do usuário através do nome. 
-    M - Masculino
-    F - Feminino
-    N - Erro
-    """
 
-    def __init__(self, nome: str = None):
+    def __init__(self, nome, lista_json):
         self.nome = nome  # nome do usuário
-
+        self.lista_json = lista_json
 
     def __call__(self):
         print(
             'Recebe string com o nome de usuário \
             e retorna o  provável sexo do usuário')
 
-
-    def normaliza_nome(self) -> str:
+    def normaliza_nome(self):
         """
         Recebe string com o nome de usuário e retorna a string tratada e
         movendo acentos e caracteres específicos,
         e converter string para caixa alta.
         """
-        if self.nome is not None:
-            return normalize("NFKD",  self.nome).encode("ascii",
-                                                        errors="ignore"
+        return normalize("NFKD",  self.nome).encode("ascii", errors="ignore"
                                                         ).decode("ascii").upper()
-
-
-    def genJson(self) -> dict: 
-        """
-        Carrega dataset e os nomes e os mais prováveis sexos dos usuários.
-        """
-        data = pd.read_csv('nomes.csv.gz')[['first_name', 'classification']]
-        return {i[1]: i[2] for i in data.itertuples()}
-
+        
 
     def classifica(self) -> str:
         """
         Recebe o nome tratado e retorna o sexo  do usuário.
-        caso o nome do usuário não exista na lista é retornado N.
+        caso o nome do usuário não exista na lista é retornado D.
         """
+
         try:
-            return self.genJson()[self.normaliza_nome()]
+            return self.lista_json[self.normaliza_nome()]
         except Exception as e:
-            return 'N'
+            return 'D'
 
 
 if  __name__ == '__main__':
@@ -60,8 +57,16 @@ if  __name__ == '__main__':
 
     df = pd.DataFrame(data=data)
 
+    json = JsonDeNome(path ='nomes.csv.gz').geraJson()
+
     def sexo(nome):
-        return GeneroPorNome(nome).classifica()
+        return GeneroPorNome(nome, json).classifica()
 
     df['sexo'] = df['nome'].apply(sexo)
+
     print(df)
+    
+
+
+
+
