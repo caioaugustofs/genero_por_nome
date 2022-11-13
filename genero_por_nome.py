@@ -1,5 +1,6 @@
-import pandas as pd 
 from unicodedata import normalize
+from typing import Dict
+import pandas as pd 
 
 
 class JsonDeNome:
@@ -11,48 +12,49 @@ class JsonDeNome:
         """
         Carrega dataset e os nomes e os mais prováveis sexos dos usuários.
         """
+
         data = pd.read_csv(self.path)[['first_name', 'classification']]
-        return {i[1]: i[2] for i in data.itertuples()}
-
-
+        dictNome: Dict[str, str] = {i[1]: i[2] for i in data.itertuples()}
+        return dictNome
 
 class GeneroPorNome:
 
-    def __init__(self, nome, lista_json):
-        self.nome = nome  # nome do usuário
-        self.lista_json = lista_json
+    def __init__(self, nome:str, dictNames:dict):
+        self.nome= nome  # nome do usuário
+        self.dictNames = dictNames
 
     def __call__(self):
         print(
             'Recebe string com o nome de usuário \
             e retorna o  provável sexo do usuário')
-
-    def normaliza_nome(self):
+            
+    def normaliza_nome(self) -> str:
         """
         Recebe string com o nome de usuário e retorna a string tratada e
         movendo acentos e caracteres específicos,
         e converter string para caixa alta.
         """
-        return normalize("NFKD",  self.nome).encode("ascii", errors="ignore"
-                                                        ).decode("ascii").upper()
-        
 
+        nomeNorm: str = normalize("NFKD", 
+                                    self.nome).encode("ascii",
+                                    errors="ignore" ).decode("ascii").upper()
+
+        return nomeNorm
+   
     def classifica(self) -> str:
         """
         Recebe o nome tratado e retorna o sexo  do usuário.
         caso o nome do usuário não exista na lista é retornado D.
         """
-
         try:
-            return self.lista_json[self.normaliza_nome()]
+            return self.dictNames[self.normaliza_nome()]
         except Exception as e:
             return 'D'
 
 
 if  __name__ == '__main__':
-    data = {
-    'nome': ['ana', 'Maria', 'joão','antonio','kelly'],
-    'idade': [18, 20, 25,36,20]
+    data = {'nome': ['ana', 'Maria', 'joão', 'Antônio', 'kelly'],
+    'idade': [18, 20, 25, 36, 20]
     }
 
     df = pd.DataFrame(data=data)
@@ -63,10 +65,4 @@ if  __name__ == '__main__':
         return GeneroPorNome(nome, json).classifica()
 
     df['sexo'] = df['nome'].apply(sexo)
-
     print(df)
-    
-
-
-
-
